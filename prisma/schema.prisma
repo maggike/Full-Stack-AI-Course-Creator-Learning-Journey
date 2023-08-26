@@ -1,0 +1,93 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+
+generator client {
+  provider = "prisma-client-js"
+}
+ 
+datasource db {
+  provider     = "mysql"
+  url          = env("DATABASE_URL")
+  relationMode = "prisma"
+}
+ 
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String? @db.Text
+  access_token      String? @db.Text
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String? @db.Text
+  session_state     String?
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  @@index([userId], name:"userId")
+  @@unique([provider, providerAccountId])
+}
+ 
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  @@index([userId], name:"userId")
+}
+ 
+model User {
+  id            String    @id @default(cuid())
+  name          String?
+  email         String?   @unique
+  emailVerified DateTime?
+  image         String?
+  credits       Int       @default(10)
+  accounts Account[]
+  sessions Session[]
+}
+
+model Course{
+  id            String    @id @default(cuid())
+  name          String
+  image         String
+  units         Unit[]
+}
+
+model Unit{
+  id            String    @id @default(cuid())
+  courseId      String
+  name          String
+  course        Course    @relation(fields: [courseId], references:[id])
+  chapters      Chapter[]
+  @@index([courseId], name:"courseId")
+}
+
+model Chapter{
+  id                 String    @id @default(cuid())
+  unitId             String
+  name               String
+  youtubeSearchQuery String 
+  videoId            String?
+  summary            String?   @db.VarChar(3000)
+  unit Unit @relation(fields:[unitId], references:[id])
+  questions Question[]
+
+@@index([unitId], name:"unitId")
+}
+
+model Question{
+  id                String @id @default(cuid())
+  chapterId         String
+  question          String @db.VarChar(3000)
+  answer            String @db.VarChar(3000)
+  options           String @db.VarChar(3000)
+  chapter           Chapter @relation(fields:[chapterId], references:[id])
+
+  @@index([chapterId], name:"chapterId")
+
+
+}
